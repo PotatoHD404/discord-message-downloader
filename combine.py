@@ -1,5 +1,4 @@
 import os
-import json
 from dateutil.parser import parse
 
 from utils import read_json, save_json
