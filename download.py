@@ -1,9 +1,10 @@
 import os
 import time
-import json
 import requests
 from dotenv import load_dotenv
 from requests.exceptions import RequestException
+
+from utils import read_json, save_json
 
 load_dotenv()
 
@@ -33,28 +34,30 @@ def get_messages(before_id=None):
     return None
 
 
-def save_json(filename, data):
-    with open(filename, 'w', encoding='utf-8') as f:
-        json.dump(data, f, ensure_ascii=False, indent=4)
-
-
-def read_json(filename):
-    with open(filename, 'r', encoding='utf-8') as f:
-        return json.load(f)
-
-
 def fetch_all_messages():
     before_id = None
     file_counter = 1
+    # Create a directory for messages if it doesn't exist
+    if not os.path.exists('messages'):
+        os.makedirs('messages')
+
+    # if there are already messages saved, get the ID of the last message
+    if os.path.exists('messages'):
+        files = os.listdir('messages')
+        if files:
+            messages = read_json(f'messages/{files[-1]}')
+            before_id = messages[-1]['id']
+            file_counter = int(files[-1].split('_')[-1].split('.')[0]) + 1
+
     while True:
         messages = get_messages(before_id)
         if not messages:
             print("No more messages or request failed after retries.")
             break
         before_id = messages[-1]['id']  # Get the ID of the last message for the next iteration
-        save_json(f'messages_{file_counter}.json', messages)
+        save_json(f'messages/{file_counter}.json', messages)
         file_counter += 1
-        time.sleep(1)  # To prevent rate limiting
+        time.sleep(10 * 60 / 9000)  # To prevent rate limiting 10,000 per 10 minutes
 
 
 def main():
